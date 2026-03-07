@@ -1,6 +1,7 @@
 package io.trieukhac.petshopwebapp;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -14,6 +15,5 @@ class PetShopWebappApplicationMainTest {
       assertNotNull(ctx); // đảm báo context được tạo
       assertTrue(ctx.isActive());
     }
-    // rất quan trọng: đóng context để test không giữ tài nguyên
   }
 }
