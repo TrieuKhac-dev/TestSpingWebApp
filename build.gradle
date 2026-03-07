@@ -53,8 +53,9 @@ dependencies {
 }
 
 // ---------- test config ----------
-tasks.named('test') {
+test {
     useJUnitPlatform()
+    finalizedBy('jacocoTestReport') // tạo report sau test
 }
 
 // ---------- JaCoCo ----------
@@ -63,6 +64,7 @@ jacoco {
 }
 
 jacocoTestReport {
+    dependsOn(test)
     reports {
         xml.required = true
         html.required = true
@@ -70,6 +72,7 @@ jacocoTestReport {
 }
 
 jacocoTestCoverageVerification {
+    dependsOn(jacocoTestReport)
     violationRules {
         rule {
             limit {
@@ -78,6 +81,7 @@ jacocoTestCoverageVerification {
         }
     }
 }
+
 check.dependsOn jacocoTestCoverageVerification
 
 // ---------- Checkstyle ----------
@@ -112,10 +116,17 @@ spotless {
     }
 }
 
+// ---------- precommit ----------
+tasks.register("precommit") {
+    group = "verification"
+    description = "Quick local checks before commit: format + style + spotbugs"
+    dependsOn("spotlessApply", "checkstyleMain", "spotbugsMain")
+}
+
+// git hooks plugin: gọi precommit (plugin sẽ tạo .git/hooks/pre-commit khi gradle chạy)
 gitHooks {
-    // pre-commit chạy format + style + spotbugs (không chạy test nặng để giữ nhanh)
     hooks = [
-            'pre-commit': 'spotlessApply checkstyleMain spotbugsMain',
+            'pre-commit': 'precommit'
     ]
 }
 
