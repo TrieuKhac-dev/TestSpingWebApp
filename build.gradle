@@ -1,0 +1,129 @@
+import com.github.spotbugs.snom.SpotBugsTask
+
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.0.3'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
+    id 'checkstyle'
+    id 'com.github.spotbugs' version '6.0.15'
+    id 'org.owasp.dependencycheck' version '9.0.10'
+    id 'com.diffplug.spotless' version '6.25.0'
+    id 'com.github.jakemarsden.git-hooks' version '0.0.2'
+}
+
+group = 'io.trieukhac'
+version = '0.0.1-SNAPSHOT'
+description = 'pet-shop-webapp'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // test/dev
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.testcontainers:junit-jupiter:1.19.8'
+    testImplementation 'org.mockito:mockito-core:5.12.0'
+    testImplementation 'io.rest-assured:rest-assured:5.4.0'
+
+    // Embedded DB for tests -> fix DataSource autoconfig errors
+    testImplementation 'com.h2database:h2:2.2.220'
+}
+
+// ---------- test config ----------
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// ---------- JaCoCo ----------
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+// ---------- Checkstyle ----------
+checkstyle {
+    toolVersion = '10.17.0'
+    configDirectory = file("${rootDir}/config/checkstyle")
+}
+
+//tasks.withType(Checkstyle) {
+    // không fail build cứng do checkstyle (tùy policy); để cảnh báo bằng cách thay đổi severity
+//    ignoreFailures = false // nếu muốn không block, set true
+//}
+
+// ---------- SpotBugs ----------
+spotbugs {
+    toolVersion = '4.9.8'
+    effort = 'min'          // min để nhanh hơn; đổi thành 'max' nếu muốn phân tích sâu
+    reportLevel = 'low'     // cảnh báo level thấp để tránh spam
+}
+
+tasks.withType(SpotBugsTask).configureEach {
+    ignoreFailures = Boolean.parseBoolean(
+            (project.findProperty("spotbugsIgnoreFailures") ?: "false").toString()
+    )
+}
+
+// ---------- Spotless (format) ----------
+spotless {
+    java {
+        googleJavaFormat()
+        target 'src/**/*.java'
+    }
+}
+
+gitHooks {
+    // pre-commit chạy format + style + spotbugs (không chạy test nặng để giữ nhanh)
+    hooks = [
+            'pre-commit': 'spotlessApply checkstyleMain spotbugsMain',
+            // commit-msg sẽ gọi task commitMsgValidate và truyền file message ($1)
+            'commit-msg' : 'commitMsgValidate -DmsgFile=$1'
+    ]
+    // tuỳ chỉnh (nếu muốn) - ví dụ đường dẫn hook, gradle command
+    // hooksDirectory = file('../.git/hooks')
+    // gradleCommand = './gradlew'
+}
+
+// ---------- OWASP Dependency Check ----------
+dependencyCheck {
+    failBuildOnCVSS = Integer.parseInt(
+            (project.findProperty("dependencyCheckFailBuildOnCVSS") ?: "7").toString()
+    )
+    suppressionFile = "${projectDir}/dependency-check-suppressions.xml"
+}
+
+// ---------- convenience tasks ----------
+tasks.register("format") {
+    group = "formatting"
+    description = "Run Spotless apply to format code"
+    dependsOn("spotlessApply")
+}
