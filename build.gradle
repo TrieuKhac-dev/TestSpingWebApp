@@ -69,6 +69,17 @@ jacocoTestReport {
     }
 }
 
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.80
+            }
+        }
+    }
+}
+check.dependsOn jacocoTestCoverageVerification
+
 // ---------- Checkstyle ----------
 checkstyle {
     toolVersion = '10.17.0'
@@ -105,12 +116,7 @@ gitHooks {
     // pre-commit chạy format + style + spotbugs (không chạy test nặng để giữ nhanh)
     hooks = [
             'pre-commit': 'spotlessApply checkstyleMain spotbugsMain',
-            // commit-msg sẽ gọi task commitMsgValidate và truyền file message ($1)
-            'commit-msg' : 'commitMsgValidate -DmsgFile=$1'
     ]
-    // tuỳ chỉnh (nếu muốn) - ví dụ đường dẫn hook, gradle command
-    // hooksDirectory = file('../.git/hooks')
-    // gradleCommand = './gradlew'
 }
 
 // ---------- OWASP Dependency Check ----------
