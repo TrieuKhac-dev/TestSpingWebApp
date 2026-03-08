@@ -50,21 +50,22 @@ jobs:
         # dependency-check will create report in build/reports/dependency-check-report.html
         # See gradle.properties for the threshold (set dependencyCheckFailBuildOnCVSS=7)
 
-      - name: Run Semgrep
-        uses: returntocorp/semgrep-action@v2
+      - name: Run Semgrep (SAST)
+        uses: semgrep/semgrep-action@v1
         with:
-          config: 'auto'
+          config: auto
 
       - name: Run gitleaks scan (sensitive data)
         uses: zricethezav/gitleaks-action@v2
-        with:
-          args: detect --source=.
 
       - name: Build Docker image
         run: docker build -t pet-shop-webapp:${{ github.sha }} .
 
       - name: Scan Docker image with Trivy
-        uses: aquasec/trivy-action@v0.3.2
+        uses: aquasecurity/trivy-action@0.20.0
         with:
           image-ref: pet-shop-webapp:${{ github.sha }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
           scan-type: image

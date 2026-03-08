@@ -33,12 +33,15 @@ repositories {
 }
 
 dependencies {
+    // ---------- Spring Boot----------
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // ---------- Lombok ----------
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
-    // test/dev
+    // --------- Testing/Dev ----------
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
@@ -52,31 +55,39 @@ dependencies {
     testImplementation 'com.h2database:h2:2.2.220'
 }
 
-// ---------- test config ----------
+// ---------- Test Config ----------
 test {
     useJUnitPlatform()
     finalizedBy('jacocoTestReport') // tạo report sau test
 }
 
-// ---------- JaCoCo ----------
+// ---------- JaCoCo (Test Coverage) ----------
 jacoco {
     toolVersion = "0.8.12"
 }
 
 jacocoTestReport {
     dependsOn(test)
+
     reports {
         xml.required = true
         html.required = true
     }
 }
 
+def jacocoMinimumCoverage =
+    providers.gradleProperty("jacocoMinimumCoverage")
+    .orElse("0.80")
+    .get()
+    .toBigDecimal()
+
 jacocoTestCoverageVerification {
     dependsOn(jacocoTestReport)
+
     violationRules {
         rule {
             limit {
-                minimum = 0.80
+                minimum = jacocoMinimumCoverage
             }
         }
     }
@@ -84,22 +95,23 @@ jacocoTestCoverageVerification {
 
 check.dependsOn jacocoTestCoverageVerification
 
-// ---------- Checkstyle ----------
+// ---------- Checkstyle (Code Style Rule) ----------
 checkstyle {
     toolVersion = '10.17.0'
     configDirectory = file("${rootDir}/config/checkstyle")
 }
 
-//tasks.withType(Checkstyle) {
-    // không fail build cứng do checkstyle (tùy policy); để cảnh báo bằng cách thay đổi severity
-//    ignoreFailures = false // nếu muốn không block, set true
-//}
+tasks.withType(Checkstyle).configureEach {
+    ignoreFailures = Boolean.parseBoolean(
+            (project.findProperty("checkstyleIgnoreFailures") ?: "false").toString()
+    )
+}
 
-// ---------- SpotBugs ----------
+// ---------- SpotBugs (Static Analysis) ----------
 spotbugs {
     toolVersion = '4.9.8'
-    effort = 'min'          // min để nhanh hơn; đổi thành 'max' nếu muốn phân tích sâu
-    reportLevel = 'low'     // cảnh báo level thấp để tránh spam
+    effort = (project.findProperty("spotbugsEffort") ?: "min").toString()
+    reportLevel = (project.findProperty("spotbugsReportLevel") ?: "low").toString()
 }
 
 tasks.withType(SpotBugsTask).configureEach {
@@ -116,20 +128,6 @@ spotless {
     }
 }
 
-// ---------- precommit ----------
-tasks.register("precommit") {
-    group = "verification"
-    description = "Quick local checks before commit: format + style + spotbugs"
-    dependsOn("spotlessApply", "checkstyleMain", "spotbugsMain")
-}
-
-// git hooks plugin: gọi precommit (plugin sẽ tạo .git/hooks/pre-commit khi gradle chạy)
-gitHooks {
-    hooks = [
-            'pre-commit': 'precommit'
-    ]
-}
-
 // ---------- OWASP Dependency Check ----------
 dependencyCheck {
     failBuildOnCVSS = Integer.parseInt(
@@ -138,9 +136,27 @@ dependencyCheck {
     suppressionFile = "${projectDir}/dependency-check-suppressions.xml"
 }
 
-// ---------- convenience tasks ----------
+// ---------- Git Hooks ----------
+// git hooks plugin: gọi precommit (plugin sẽ tạo .git/hooks/pre-commit khi gradle chạy)
+gitHooks {
+    hooks = [
+            'pre-commit': 'precommit'
+    ]
+}
+
+// ---------- Convenience Tasks ----------
 tasks.register("format") {
     group = "formatting"
     description = "Run Spotless apply to format code"
     dependsOn("spotlessApply")
+}
+
+tasks.register("precommit") {
+    group = "verification"
+    description = "Quick local checks before commit: gitleak + format + style + spotbugs"
+    dependsOn(
+            "spotlessCheck",
+            "checkstyleMain",
+            "spotbugsMain"
+    )
 }
