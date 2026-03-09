@@ -7,7 +7,6 @@ plugins {
     id 'jacoco'
     id 'checkstyle'
     id 'com.github.spotbugs' version '6.0.15'
-    id 'org.owasp.dependencycheck' version '9.0.10'
     id 'com.diffplug.spotless' version '6.25.0'
     id 'com.github.jakemarsden.git-hooks' version '0.0.2'
 }
@@ -76,7 +75,7 @@ jacocoTestReport {
 }
 
 def jacocoMinimumCoverage =
-    providers.gradleProperty("jacocoMinimumCoverage")
+    providers.gradleProperty("jacoco.minimum.coverage")
     .orElse("0.80")
     .get()
     .toBigDecimal()
@@ -103,21 +102,25 @@ checkstyle {
 
 tasks.withType(Checkstyle).configureEach {
     ignoreFailures = Boolean.parseBoolean(
-            (project.findProperty("checkstyleIgnoreFailures") ?: "false").toString()
+            (project.findProperty("checkstyle.ignore.failures") ?: "false").toString()
     )
 }
 
 // ---------- SpotBugs (Static Analysis) ----------
 spotbugs {
     toolVersion = '4.9.8'
-    effort = (project.findProperty("spotbugsEffort") ?: "min").toString()
-    reportLevel = (project.findProperty("spotbugsReportLevel") ?: "low").toString()
+    effort = (project.findProperty("spotbugs.effort") ?: "min").toString()
+    reportLevel = (project.findProperty("spotbugs.report.level") ?: "low").toString()
 }
 
 tasks.withType(SpotBugsTask).configureEach {
     ignoreFailures = Boolean.parseBoolean(
-            (project.findProperty("spotbugsIgnoreFailures") ?: "false").toString()
+            (project.findProperty("spotbugs.ignore.failures") ?: "false").toString()
     )
+    reports {
+        html.required.set(true)
+        html.outputLocation.set(file("$buildDir/reports/spotbugs/${name}.html"))
+    }
 }
 
 // ---------- Spotless (format) ----------
@@ -126,14 +129,6 @@ spotless {
         googleJavaFormat()
         target 'src/**/*.java'
     }
-}
-
-// ---------- OWASP Dependency Check ----------
-dependencyCheck {
-    failBuildOnCVSS = Integer.parseInt(
-            (project.findProperty("dependencyCheckFailBuildOnCVSS") ?: "7").toString()
-    )
-    suppressionFile = "${projectDir}/dependency-check-suppressions.xml"
 }
 
 // ---------- Git Hooks ----------

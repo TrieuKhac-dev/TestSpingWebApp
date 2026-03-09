@@ -1,6 +1,65 @@
 version: 2
+
 updates:
+  # Quét dependency của Gradle
   - package-ecosystem: "gradle"
     directory: "/"
+
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "03:00"
+      timezone: "Asia/Ho_Chi_Minh"
+
+    # Không cho dependabot update các dependency quan trọng
+    ignore:
+      - dependency-name: "org.springframework.boot"
+      - dependency-name: "org.springframework"
+      - dependency-name: "spring-*"
+      - dependency-name: "org.springdoc"
+      - dependency-name: "jakarta.*"
+      - dependency-name: "org.hibernate"
+      - dependency-name: "com.fasterxml.jackson.core"
+      - dependency-name: "com.fasterxml.jackson"
+
+    # gom dependency update vào 1 PR
+    groups:
+      gradle-dependencies:
+        patterns:
+          - "*"
+
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+    labels:
+      - "dependencies"
+      - "gradle"
+
+    open-pull-requests-limit: 5
+
+  # Quét workflow/action ở .github/workflows.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+      timezone: "Asia/Ho_Chi_Minh"
+
+    # gom dependency update vào 1 PR
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+    open-pull-requests-limit: 5
