@@ -29,6 +29,9 @@ jobs:
       - name: Show Java version
         run: java -version
 
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
       - name: Build & run tests
         run: ./gradlew --no-daemon clean build jacocoTestReport jacocoTestCoverageVerification --stacktrace
 
