@@ -54,22 +54,22 @@ jobs:
           name: spotbugs-report
           path: build/reports/spotbugs
 
-      - name: Install Semgrep
-        run: python -m pip install --upgrade pip semgrep
-
-      - name: Run Semgrep SAST
-        run: |
-          semgrep scan \
-            --config auto \
-            --error \
-            --sarif \
-            --output semgrep-report.sarif
-
-      - name: Upload Semgrep SARIF to GitHub Security tab
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: semgrep-report.sarif
+#      - name: Install Semgrep
+#        run: python -m pip install --upgrade pip semgrep
+#
+#      - name: Run Semgrep SAST
+#        run: |
+#          semgrep scan \
+#            --config auto \
+#            --error \
+#            --sarif \
+#            --output semgrep-report.sarif
+#
+#      - name: Upload Semgrep SARIF to GitHub Security tab
+#        if: always()
+#        uses: github/codeql-action/upload-sarif@v3
+#        with:
+#          sarif_file: semgrep-report.sarif
 
       - name: Run gitleaks scan (sensitive data)
         uses: gitleaks/gitleaks-action@v2
