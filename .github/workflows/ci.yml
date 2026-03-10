@@ -63,7 +63,8 @@ jobs:
             -v "${PWD}:/src" \
             semgrep/semgrep \
             semgrep scan \
-              --config auto \
+              --config p/java \
+              --config p/security-audit \
               --error \
               --sarif \
               --output /src/semgrep-report.sarif

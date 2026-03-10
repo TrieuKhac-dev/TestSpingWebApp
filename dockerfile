@@ -1,17 +1,14 @@
-# Stage 1: build
-FROM eclipse-temurin:21-jdk AS builder
+FROM eclipse-temurin:21-jdk
 
-WORKDIR /build
-COPY . .
-
-RUN ./gradlew clean bootJar --no-daemon
-
-# Stage 2: runtime
-FROM eclipse-temurin:21-jre
+RUN useradd -m springuser
 
 WORKDIR /app
 
-COPY --from=builder /build/build/libs/*.jar app.jar
+COPY build/libs/*.jar app.jar
+
+RUN chown springuser:springuser app.jar
+
+USER springuser
 
 EXPOSE 8080
 
