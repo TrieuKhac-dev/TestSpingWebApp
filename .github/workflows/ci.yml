@@ -92,10 +92,12 @@ jobs:
           output: trivy-report.json
           ignore-unfixed: true
           scan-type: image
+          scanners: vuln
           severity: HIGH,CRITICAL
           exit-code: '1'
 
       - name: Upload Trivy report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: trivy-report
