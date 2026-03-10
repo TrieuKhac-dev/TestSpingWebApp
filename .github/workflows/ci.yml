@@ -58,16 +58,21 @@ jobs:
           path: build/reports/spotbugs
 
       - name: Run Semgrep
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: auto
-          generateSarif: "1"
-          publishToken: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker run --rm \
+            -v "${PWD}:/src" \
+            semgrep/semgrep \
+            semgrep scan \
+              --config auto \
+              --error \
+              --sarif \
+              --output /src/semgrep-report.sarif
 
       - name: Upload Semgrep SARIF
+        if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: semgrep.sarif
+          sarif_file: semgrep-report.sarif
 
       - name: Run gitleaks scan (sensitive data)
         uses: gitleaks/gitleaks-action@v2
